@@ -241,6 +241,6 @@ $app->get('/api/faculties', function () use ($app) {
 });
 
 $app->get('/api/departments', function () use ($app) {
-    getFaculties($app);
+    getDepartments($app);
 });
 $app->run();
