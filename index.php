@@ -8,9 +8,9 @@ $app->add(new \JsonApiMiddleware());
 
 function getDBConnection()
 {
-    $servername = "localhost:8889";
+    $servername = "localhost";
     $username = "root";
-    $password = "root";
+    $password = "root@123";
     $dbname = "returnx";
 // Create connection
     $conn = mysqli_connect($servername, $username, $password, $dbname);
@@ -21,12 +21,16 @@ function getDBConnection()
     return $conn;
 }
 
+
+
 function insertUser($app)
 {
     $conn = getDBConnection();
 
     $json = $app->request->getBody();
     $data = json_decode($json); // parse the JSON into an assoc.
+
+    $role=getRoleUser($app);
 
 
     if (!isset($data->{'email'})) {
@@ -43,7 +47,7 @@ function insertUser($app)
         $mobile = $data->{'mobile'};
         if(validateMobile($mobile)) {
             $pass = generatePassword();
-            
+
 
             $sql1 = "INSERT INTO `Users` (`email`, `password`,`mobile`) VALUES ('$email', '$pass','$mobile');";
             $sql2 = "SELECT id FROM Users WHERE email = '$email'";
@@ -58,6 +62,7 @@ function insertUser($app)
                     'email' => $email,
                     'self' => "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
                     'mobile' => $mobile,
+                    'role'=>$role,
                 ));
             } else {
                 $app->render(409, array(
@@ -74,29 +79,29 @@ function insertUser($app)
 
     }
 
-    
+
     $sql2 = "SELECT id FROM Users WHERE email = '$email'";
     $result2 = mysqli_query($conn, $sql2) or die (mysqli_error($conn));
     if (mysqli_num_rows($result2) == 0) {
 
 
         if (!isset($data->{'password'})) {
-        $pass = generatePassword();
-    } else {
-        $pass = $data->{'password'};
+            $pass = generatePassword();
+        } else {
+            $pass = $data->{'password'};
 
-        if (!checkPass($pass)) {
-            $app->render(400, array(
-                'message' => 'Password complexity requirement not met',
-                'developerMessage' => 'User creation failed because password complexity requirement not met',
-            ));
+            if (!checkPass($pass)) {
+                $app->render(400, array(
+                    'message' => 'Password complexity requirement not met',
+                    'developerMessage' => 'User creation failed because password complexity requirement not met',
+                ));
+
+            }
 
         }
 
-    }
 
-
-    $sql1 = "INSERT INTO `Users` (`email`, `password`) VALUES ('$email', '$pass');";
+        $sql1 = "INSERT INTO `Users` (`email`, `password`) VALUES ('$email', '$pass');";
 
 
 
@@ -109,6 +114,7 @@ function insertUser($app)
         $app->render(201, array(
             'email' => $email,
             'self' => "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
+            'role'=>$role,
         ));
     } else {
         $app->render(409, array(
@@ -117,6 +123,8 @@ function insertUser($app)
         ));
     }
 }
+
+
 
 function random_str(
     $length = 7,
@@ -164,6 +172,52 @@ function validateMobile($mobile)
     return preg_match('/^[0-9]{11}+$/', intval($mobile));
 
 }
+
+function getRoleUser($app)
+{
+    $json = $app->request->getBody();
+    $data = json_decode($json); // parse the JSON into an assoc.
+
+    $user="user";
+    $mod="moderator";
+    $admin="admin";
+
+    $role=null;
+
+    if (isset($data->{'role'}))
+    {
+        $role=$data->{'role'};
+
+        if($role==$user)
+            return $user;
+        else if($role==$mod)
+            return $mod;
+        else if($role==$admin)
+            return $admin;
+        else
+        {
+            $app->render(400, array(
+            ));
+        }
+    }
+    else
+    {
+        return $user;
+    }
+}
+
+function insertUserMain()
+{
+
+}
+
+function insertUserMobile()
+{
+
+}
+
+
+
 
 
 $app->get('/api', function () use ($app) {
