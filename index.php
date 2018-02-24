@@ -1,23 +1,11 @@
 <?php
 require 'vendor/autoload.php';
-//require 'connection.php';
+include 'connect.php';
+
+
 $app = new \Slim\Slim();
 $app->view(new \JsonApiView());
 $app->add(new \JsonApiMiddleware());
-function getDBConnection()
-{
-    $servername = "localhost";
-    $username = "root";
-    $password = "root@123";
-    $dbname = "returnx";
-// Create connection
-    $conn = mysqli_connect($servername, $username, $password, $dbname);
-    if (!$conn) {
-        die("Connection failed" . mysqli_error($conn));
-        $login = false;
-    }
-    return $conn;
-}
 
 
 function insertFac($app)
@@ -197,20 +185,19 @@ function getRoleUser($app)
 
 function getFaculties($app)
 {
-    $conn=getDBConnection();
-    $sql="SELECT * FROM `Faculty` ";
-    $result=mysqli_query($conn,$sql);
+    $conn = getDBConnection();
+    $sql = "SELECT * FROM `Faculty` ";
+    $result = mysqli_query($conn, $sql);
 
-    $row=array();
+    $row = array();
     //echo json_encode($result,JSON_FORCE_OBJECT);
 
-    while ($r=mysqli_fetch_assoc($result))
-    {
-       $row[]=$r;
+    while ($r = mysqli_fetch_assoc($result)) {
+        $row[] = $r;
     }
 
     header('Content-Type: application/json');
-    echo '{"faculties:"'.json_encode($row,JSON_UNESCAPED_SLASHES).'}';
+    echo '{"faculties:"' . json_encode($row, JSON_UNESCAPED_SLASHES) . '}';
     exit();
 
 }
