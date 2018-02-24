@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by IntelliJ IDEA.
- * User: lakinduakash
- * Date: 2018-02-24
- * Time: 17.17
- */
 
 $servername = "localhost:8889";
 $username = "root";
