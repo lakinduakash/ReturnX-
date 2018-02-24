@@ -7,6 +7,46 @@ $app = new \Slim\Slim();
 $app->view(new \JsonApiView());
 $app->add(new \JsonApiMiddleware());
 
+function insertDept($app){
+    $conn = getDBConnection();
+    $json = $app->request->getBody();
+    $data = json_decode($json); // parse the JSON into an assoc.
+    $name = $data->{'name'};
+    $fid = $data->{'faculty_id'};
+    $sql5 = "SELECT * FROM faculty WHERE id = '$fid'";
+    $sql1 = "INSERT INTO `department` (`dname`,`fid`) VALUES ('$name','$fid');";
+            $sql2 = "SELECT id FROM department WHERE dname = '$name'";
+            $result5 = mysqli_query($conn, $sql5) or die (mysqli_error($conn));
+            if (mysqli_num_rows($result5) != 0) {
+                $result1 = mysqli_query($conn, $sql2);
+                if (mysqli_num_rows($result1) == 0) {
+                    
+                    $result3 = mysqli_query($conn, $sql1) or die (mysqli_error($conn));
+                    $row1 = mysqli_fetch_assoc($result1);
+                    $app->render(201, array(
+                    'name' => $name,
+                    'self' => "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
+                    
+                ));
+                
+                }
+                else{
+                    $app->render(409, array(
+                    'message' => $row1['id'],
+                    'developerMessage' => "",
+                ));
+                }
+                //$row = mysqli_fetch_assoc($result2);
+                //$sql3 = "SELECT id FROM department WHERE dname = '$name'";
+                
+                
+            } else {
+                $app->render(400, array(
+                    'message' => "",
+                    'developerMessage' => "",
+                ));
+            }
+}
 
 function insertFac($app)
 {
@@ -242,5 +282,8 @@ $app->get('/api/faculties', function () use ($app) {
 
 $app->get('/api/departments', function () use ($app) {
     getDepartments($app);
+});
+$app->post('/api/departments', function () use ($app) {
+    insertDept($app);
 });
 $app->run();
