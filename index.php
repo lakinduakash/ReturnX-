@@ -1,15 +1,68 @@
 <?php
 require 'vendor/autoload.php';
+
 include 'connect.php';
-
-
+//require 'connection.php';
 $app = new \Slim\Slim();
 $app->view(new \JsonApiView());
 $app->add(new \JsonApiMiddleware());
 
+function insertDept($app){
+    $conn = getDBConnection();
 
-function insertFac($app)
-{
+    $json = $app->request->getBody();
+    $data = json_decode($json); // parse the JSON into an assoc.
+
+    $name = $data->{'name'};
+    $fid = $data->{'faculty_id'};
+
+
+    $sql5 = "SELECT * FROM faculty WHERE id = '$fid'";
+
+    $sql1 = "INSERT INTO `department` (`dname`,`fid`) VALUES ('$name','$fid');";
+            $sql2 = "SELECT id FROM department WHERE dname = '$name'";
+
+            $result5 = mysqli_query($conn, $sql5) or die (mysqli_error($conn));
+
+
+
+            if (mysqli_num_rows($result5) != 0) {
+                $result1 = mysqli_query($conn, $sql2);
+                if (mysqli_num_rows($result1) == 0) {
+                    
+                    $result3 = mysqli_query($conn, $sql1) or die (mysqli_error($conn));
+                    $row1 = mysqli_fetch_assoc($result1);
+                    $app->render(201, array(
+                    'name' => $name,
+                    'self' => "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
+                    
+                ));
+                
+
+                }
+                else{
+                    $app->render(409, array(
+
+                    'message' => $row1['id'],
+                    'developerMessage' => "",
+                ));
+                }
+                //$row = mysqli_fetch_assoc($result2);
+                //$sql3 = "SELECT id FROM department WHERE dname = '$name'";
+                
+                
+            } else {
+                $app->render(400, array(
+                    'message' => "",
+                    'developerMessage' => "",
+                ));
+            }
+
+
+
+
+}
+function insertFac($app){
     $conn = getDBConnection();
 
     $json = $app->request->getBody();
@@ -18,44 +71,46 @@ function insertFac($app)
     $name = $data->{'name'};
 
     $sql1 = "INSERT INTO `faculty` (`name`) VALUES ('$name');";
-    $sql2 = "SELECT id FROM faculty WHERE name = '$name'";
-    $result2 = mysqli_query($conn, $sql2) or die (mysqli_error($conn));
-    if (mysqli_num_rows($result2) == 0) {
-        $result1 = mysqli_query($conn, $sql1) or die (mysqli_error($conn));
-        //$row = mysqli_fetch_assoc($result2);
-        $sql3 = "SELECT id FROM faculty WHERE name = '$name'";
-        $result3 = mysqli_query($conn, $sql3) or die (mysqli_error($conn));
-        $row1 = mysqli_fetch_assoc($result3);
-        $app->render(201, array(
-            'name' => $name,
-            'self' => "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
+            $sql2 = "SELECT id FROM faculty WHERE name = '$name'";
+            $result2 = mysqli_query($conn, $sql2) or die (mysqli_error($conn));
+            if (mysqli_num_rows($result2) == 0) {
+                $result1 = mysqli_query($conn, $sql1) or die (mysqli_error($conn));
+                //$row = mysqli_fetch_assoc($result2);
+                $sql3 = "SELECT id FROM faculty WHERE name = '$name'";
+                $result3 = mysqli_query($conn, $sql3) or die (mysqli_error($conn));
+                $row1 = mysqli_fetch_assoc($result3);
+                $app->render(201, array(
+                    'name' => $name,
+                    'self' => 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
+                    
+                ));
+            } else {
+                $app->render(409, array(
+                    'message' => "A faculty with name: " . $name . " already exists.",
+                    'developerMessage' => "Faculty creation failed because the faculty name: " . $name . " already exists.",
+                ));
+            }
 
-        ));
-    } else {
-        $app->render(409, array(
-            'message' => "A faculty with name: " . $name . " already exists.",
-            'developerMessage' => "Faculty creation failed because the faculty name: " . $name . " already exists.",
-        ));
-    }
+
 
 
 }
-
 function insertUser($app)
 {
     $conn = getDBConnection();
     $json = $app->request->getBody();
     $data = json_decode($json); // parse the JSON into an assoc.
-    $role = getRoleUser($app);
+    $role=getRoleUser($app);
     if (!isset($data->{'email'})) {
         $app->render(400, array());
     }
     $email = $data->{'email'};
     $pass = null;
-    $mobile = null;
-    if (isset($data->{'mobile'})) {
+    $mobile=null;
+    if (isset($data->{'mobile'}))
+    {
         $mobile = $data->{'mobile'};
-        if (validateMobile($mobile)) {
+        if(validateMobile($mobile)) {
             $pass = generatePassword();
             $sql1 = "INSERT INTO `Users` (`email`, `password`,`mobile`) VALUES ('$email', '$pass','$mobile');";
             $sql2 = "SELECT id FROM Users WHERE email = '$email'";
@@ -70,7 +125,7 @@ function insertUser($app)
                     'email' => $email,
                     'self' => "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
                     'mobile' => $mobile,
-                    'role' => $role,
+                    'role'=>$role,
                 ));
             } else {
                 $app->render(409, array(
@@ -78,8 +133,11 @@ function insertUser($app)
                     'developerMessage' => "User creation failed because the email: " . $email . " already exists",
                 ));
             }
-        } else {
-            $app->render(400, array());
+        }
+        else
+        {
+            $app->render(400, array(
+            ));
         }
     }
     $sql2 = "SELECT id FROM Users WHERE email = '$email'";
@@ -105,7 +163,7 @@ function insertUser($app)
         $app->render(201, array(
             'email' => $email,
             'self' => "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
-            'role' => $role,
+            'role'=>$role,
         ));
     } else {
         $app->render(409, array(
@@ -114,7 +172,6 @@ function insertUser($app)
         ));
     }
 }
-
 function random_str(
     $length = 7,
     $keyspace = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*_-+=`|\(){}[].?'
@@ -130,7 +187,6 @@ function random_str(
     }
     return $str;
 }
-
 function generatePassword()
 {
     $keyspace1 = '0123456789';
@@ -140,7 +196,6 @@ function generatePassword()
     $str = '' . random_str(1, $keyspace1) . random_str(1, $keyspace2) . random_str(1, $keyspace3) . random_str(1, $keyspace4) . random_str(3);
     return $str;
 }
-
 function checkPass($pass)
 {
     $uppercase = preg_match('@[A-Z]@', $pass);
@@ -153,62 +208,49 @@ function checkPass($pass)
         return true;
     }
 }
-
 function validateMobile($mobile)
 {
     return preg_match('/^[0-9]{11}+$/', intval($mobile));
 }
-
 function getRoleUser($app)
 {
     $json = $app->request->getBody();
     $data = json_decode($json); // parse the JSON into an assoc.
-    $user = "user";
-    $mod = "moderator";
-    $admin = "admin";
-    $role = null;
-    if (isset($data->{'role'})) {
-        $role = $data->{'role'};
-        if ($role == $user)
+    $user="user";
+    $mod="moderator";
+    $admin="admin";
+    $role=null;
+    if (isset($data->{'role'}))
+    {
+        $role=$data->{'role'};
+        if($role==$user)
             return $user;
-        else if ($role == $mod)
+        else if($role==$mod)
             return $mod;
-        else if ($role == $admin)
+        else if($role==$admin)
             return $admin;
-        else {
-            $app->render(400, array());
+        else
+        {
+            $app->render(400, array(
+            ));
         }
-    } else {
+    }
+    else
+    {
         return $user;
     }
 }
-
-function getFaculties($app)
+function insertUserMain()
 {
-    $conn = getDBConnection();
-    $sql = "SELECT * FROM `Faculty` ";
-    $result = mysqli_query($conn, $sql);
-
-    $row = array();
-    //echo json_encode($result,JSON_FORCE_OBJECT);
-
-    while ($r = mysqli_fetch_assoc($result)) {
-        $row[] = $r;
-    }
-
-    header('Content-Type: application/json');
-    echo '{"faculties:"' . json_encode($row, JSON_UNESCAPED_SLASHES) . '}';
-    exit();
-
 }
-
+function insertUserMobile()
+{
+}
 $app->get('/api', function () use ($app) {
     $app->render(200, array(
         'message' => 'Success',
     ));
 });
-
-
 $app->post('/api/users', function () use ($app) {
     insertUser($app);
 });
@@ -218,6 +260,10 @@ $app->post('/api/faculties', function () use ($app) {
 });
 
 $app->get('/api/faculties', function () use ($app) {
-    getFaculties($app);
+    getFacs($app);
+});
+$app->post('/api/departments', function () use ($app) {
+    insertDept($app);
 });
 $app->run();
+?>
