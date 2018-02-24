@@ -64,7 +64,7 @@ if (!$conn) {
 
     $app->render(201,array(
         'email' => $data ->{'email'},
-        'self' => $row['id'],
+        'self' => "http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'/'.$row['id'],
     ));
 
 
