@@ -21,6 +21,41 @@ function getDBConnection()
     return $conn;
 }
 
+
+
+function insertFac($app){
+    $conn = getDBConnection();
+
+    $json = $app->request->getBody();
+    $data = json_decode($json); // parse the JSON into an assoc.
+
+    $name = $data->{'name'};
+
+    $sql1 = "INSERT INTO `faculty` (`name`) VALUES ('$name');";
+            $sql2 = "SELECT id FROM faculty WHERE name = '$name'";
+            $result2 = mysqli_query($conn, $sql2) or die (mysqli_error($conn));
+            if (mysqli_num_rows($result2) == 0) {
+                $result1 = mysqli_query($conn, $sql1) or die (mysqli_error($conn));
+                //$row = mysqli_fetch_assoc($result2);
+                $sql3 = "SELECT id FROM faculty WHERE name = '$name'";
+                $result3 = mysqli_query($conn, $sql3) or die (mysqli_error($conn));
+                $row1 = mysqli_fetch_assoc($result3);
+                $app->render(201, array(
+                    'name' => $name,
+                    'self' => "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . '/' . $row1['id'],
+                    
+                ));
+            } else {
+                $app->render(409, array(
+                    'message' => "A faculty with name: " . $name . " already exists.",
+                    'developerMessage' => "Faculty creation failed because the faculty name: " . $name . " already exists.",
+                ));
+            }
+
+
+
+
+}
 function insertUser($app)
 {
     $conn = getDBConnection();
@@ -174,5 +209,13 @@ $app->get('/api', function () use ($app) {
 $app->post('/api/users', function () use ($app) {
     insertUser($app);
 });
+$app->post('/api/faculties', function () use ($app) {
+    insertFac($app);
+});
+
+$app->get('/api/faculties', function () use ($app) {
+    getFacs($app);
+});
+
 $app->run();
 ?>
