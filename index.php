@@ -202,6 +202,25 @@ function getFaculties($app)
 
 }
 
+function getDepartments($app)
+{
+    $conn = getDBConnection();
+    $sql = "SELECT * FROM `Departments` ";
+    $result = mysqli_query($conn, $sql);
+
+    $row = array();
+    //echo json_encode($result,JSON_FORCE_OBJECT);
+
+    while ($r = mysqli_fetch_assoc($result)) {
+        $row[] = $r;
+    }
+
+    header('Content-Type: application/json');
+    echo '{"departments:"' . json_encode($row, JSON_UNESCAPED_SLASHES) . '}';
+    exit();
+
+}
+
 $app->get('/api', function () use ($app) {
     $app->render(200, array(
         'message' => 'Success',
@@ -218,6 +237,10 @@ $app->post('/api/faculties', function () use ($app) {
 });
 
 $app->get('/api/faculties', function () use ($app) {
+    getFaculties($app);
+});
+
+$app->get('/api/departments', function () use ($app) {
     getFaculties($app);
 });
 $app->run();
