@@ -9,7 +9,7 @@ $app->add(new \JsonApiMiddleware());
 
 $app->get('/api', function() use ($app) {
     $app->render(200,array(
-            'msg' => 'Success',
+            'message' => 'Success',
         ));
 });
 
