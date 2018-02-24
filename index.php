@@ -16,6 +16,13 @@ function getConnection() {
 }
 
 
+function validate_mobile($mobile)
+{
+   return preg_match('/^[0-9]{11}+$/', intval($mobile));
+
+}
+
+
 $app = new \Slim\Slim();
 
 $app->view(new \JsonApiView());
@@ -49,10 +56,12 @@ if (!$conn) {
     $email = $data->{'email'};
     $pass = $data->{'password'};
 
-    $sql1 = "INSERT INTO `Users` (`email`, `password`) VALUES ('$email', '$pass');";
+    $mobile = $data->{'mobile'};
+
+
+if(validate_mobile($mobile)){
+    $sql1 = "INSERT INTO `Users` (`email`, `mobile`) VALUES ('$email', '$mobile');";
     $sql2 = "SELECT id FROM Users WHERE email = '$email'";
-
-
     $result1 = mysqli_query($conn, $sql1) or die (mysqli_error($conn));
     $result2 = mysqli_query($conn, $sql2) or die (mysqli_error($conn));
 
@@ -63,12 +72,21 @@ if (!$conn) {
 
 
     $app->render(201,array(
+        
+        'self' => "http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'/'.$row['id'],
         'email' => $data ->{'email'},
-        'self' => $row['id'],
+        'mobile' => $data ->{'mobile'},
     ));
 
+}
+else{
+    $app->render(400,array(
+        
+    ));
+}
 
-    //print $data->{'email'};
+
+
 
 });
 
