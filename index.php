@@ -62,7 +62,7 @@ function insertUser($app)
 
         $app->render(201,array(
             'email' => $email,
-            'self' => $row1['id'],
+            'self' => "http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'/'.$row1['id'],
         ));
     }
     else
