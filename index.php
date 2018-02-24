@@ -3,6 +3,11 @@
 require 'vendor/autoload.php';
 //require 'connection.php';
 
+$app = new \Slim\Slim();
+
+$app->view(new \JsonApiView());
+$app->add(new \JsonApiMiddleware());
+
 
 
 function getConnection() {
@@ -15,11 +20,73 @@ function getConnection() {
     return $dbh;
 }
 
+function insertUser($app)
+{
+    //$con = getConnection();
+    $servername = "localhost";
+    $username = "root";
+    $password = "root@123";
+    $dbname = "returnx";
 
-$app = new \Slim\Slim();
 
-$app->view(new \JsonApiView());
-$app->add(new \JsonApiMiddleware());
+// Create connection
+    $conn = mysqli_connect($servername, $username, $password, $dbname);
+    if (!$conn) {
+        die("Connection failed" . mysqli_error($conn));
+        $login = false;
+    }
+
+    $json = $app->request->getBody();
+    $data = json_decode($json); // parse the JSON into an assoc.
+
+    if(!isset($data->{'email'})){
+        $app->render(400,array(
+        ));
+    }
+
+    $email = $data->{'email'};
+    $pass = $data->{'password'};
+
+    if(!isset($data->{'password'}))
+    {
+        $pass=generatePassword();
+    }
+
+
+
+
+    $sql1 = "INSERT INTO `Users` (`email`, `password`) VALUES ('$email', '$pass');";
+    $sql2 = "SELECT id FROM Users WHERE email = '$email'";
+
+
+    $result2 = mysqli_query($conn, $sql2) or die (mysqli_error($conn));
+
+
+    if(mysqli_num_rows($result2)==0)
+    {
+        $result1 = mysqli_query($conn, $sql1) or die (mysqli_error($conn));
+        $row = mysqli_fetch_assoc($result2);
+
+        $app->render(201,array(
+            'email' => $email,
+            'self' => $row['id'],
+        ));
+    }
+    else
+    {
+        $app->render(409,array(
+            'message' => "A user with email:".$email." already exist.",
+            'developerMessage' => "User creation failed because the email: {$email} already exists.",
+        ));
+
+    }
+}
+
+function generatePassword()
+{
+
+}
+
 
 $app->get('/api', function() use ($app) {
     $app->render(200,array(
@@ -29,50 +96,15 @@ $app->get('/api', function() use ($app) {
 
 
 
-$app->post('/api/users', function () use ($app) {
-    //$con = getConnection();
-$servername = "localhost:8889";
-$username = "root";
-$password = "root";
-$dbname = "returnx";
 
-
-// Create connection
-$conn = mysqli_connect($servername, $username, $password, $dbname);
-if (!$conn) {
-    die("Connection failed" . mysqli_error($conn));
-    $login = false;
-}
-
-    $json = $app->request->getBody();
-    $data = json_decode($json); // parse the JSON into an assoc.
-    $email = $data->{'email'};
-    $pass = $data->{'password'};
-
-    $sql1 = "INSERT INTO `Users` (`email`, `password`) VALUES ('$email', '$pass');";
-    $sql2 = "SELECT id FROM Users WHERE email = '$email'";
-
-
-    $result1 = mysqli_query($conn, $sql1) or die (mysqli_error($conn));
-    $result2 = mysqli_query($conn, $sql2) or die (mysqli_error($conn));
-
-    $row = mysqli_fetch_assoc($result2);
+$app->post('/api/users', function () use ($app) { insertUser($app); });
 
 
 
-
-
-    $app->render(201,array(
-        'email' => $data ->{'email'},
-        'self' => "http://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'].'/'.$row['id'],
-    ));
-
-
-    //print $data->{'email'};
-
-});
 
 $app->run();
+
+
 
 
 ?>
